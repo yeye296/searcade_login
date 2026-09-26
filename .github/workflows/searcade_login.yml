@@ -1,0 +1,53 @@
+name: Searcade Auto Login (pydoll)
+
+on:
+  schedule:
+    - cron: '0 0 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装系统依赖 (Chromium + xvfb)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq chromium-browser xvfb curl unzip
+
+      - name: 安装 Python 依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行脚本 (使用 xvfb)
+        env:
+          SEARCADE_EMAIL: ${{ secrets.SEARCADE_EMAIL }}
+          SEARCADE_PASSWORD: ${{ secrets.SEARCADE_PASSWORD }}
+          WXPUSHER_TOKEN: ${{ secrets.WXPUSHER_TOKEN }}
+          WXPUSHER_UID: ${{ secrets.WXPUSHER_UID }}
+          DISPLAY: ":99"
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x720x24 +extension RANDR &
+          sleep 1
+          timeout 285 python searcade_pydoll.py || echo "脚本退出码: $?"
+          echo "=== 截图目录内容 ==="
+          ls -la ./screenshots/ || echo "截图目录不存在"
+          pkill Xvfb 2>/dev/null || true
+
+      - name: 上传截图
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: searcade-login-debug
+          path: |
+            ./screenshots/*.png
+          retention-days: 7

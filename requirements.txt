@@ -1,0 +1,4 @@
+pydoll-python>=1.0.0
+ddddocr
+Pillow
+httpx>=0.27.0
