@@ -1,5 +1,5 @@
 import asyncio
-import os
+import os, sys
 import re
 import logging
 import random
@@ -810,14 +810,16 @@ async def main():
         browser, tab = await create_browser()
         success      = await login_searcade(browser, tab)
         if success:
-            wxpush("✅ Searcade 自动登录成功")
+            print("✅ Searcade 自动登录成功")
         else:
-            wxpush("❌ Searcade 登录失败，请检查截图")
+            print("❌ Searcade 登录失败，请检查截图")
+            sys.exit(1)
     except Exception as e:
         log.exception(e)
         if browser and tab:
             await take_screenshot(browser, tab, "99_error")
-        wxpush(f"❌ Searcade 登录异常: {e}")
+        print(f"❌ Searcade 登录异常: {e}")
+        sys.exit(1)
     finally:
         if browser:
             await asyncio.sleep(5)
